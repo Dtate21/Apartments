@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Developer Admin</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-title">
+          Apartments E_M
+          <span class="badge">Dev Console</span>
+        </div>
+        <div class="brand-subtitle">
+          Manage the dataset, gated by a developer login with hidden metrics.
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="index.html">Overview</a>
+        <a href="apartments.html">Browse</a>
+        <a href="admin.html" class="nav-primary">Developer Admin</a>
+      </nav>
+    </header>
+
+    <main class="app-main">
+      <!-- Auth card -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Authentication</h2>
+            <p class="card-subtitle">Sign in as the developer to edit and curate the apartment list.</p>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="u">Username</label>
+            <input id="u" placeholder="dev username" />
+          </div>
+          <div class="field">
+            <label for="p">Password</label>
+            <input id="p" type="password" placeholder="password" />
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 4px;">
+          <button id="login" class="btn btn-primary" type="button">Login</button>
+          <button id="logout" class="btn btn-secondary" type="button">Logout</button>
+        </div>
+
+        <p id="whoami" class="meta" style="margin-top: 10px;">Checking session…</p>
+      </section>
+
+      <!-- Add apartment card -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Add Apartment</h2>
+            <p class="card-subtitle">
+              Insert a new row into the dataset with pricing, size, distances, and an optional listing URL.
+            </p>
+          </div>
+          <span class="pill">Dev only</span>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" placeholder="Property name + floor plan" />
+          </div>
+
+          <div class="field">
+            <label for="price">Price</label>
+            <input id="price" type="number" placeholder="e.g. 1850" />
+          </div>
+
+          <div class="field">
+            <label for="sqft">Square Footage</label>
+            <input id="sqft" type="number" placeholder="e.g. 725" />
+          </div>
+
+          <div class="field">
+            <label for="beds">Bedrooms</label>
+            <input id="beds" type="number" placeholder="e.g. 2" />
+          </div>
+
+          <div class="field">
+            <label for="baths">Bathrooms</label>
+            <input id="baths" type="number" step="0.5" placeholder="e.g. 2" />
+          </div>
+
+          <div class="field">
+            <label for="d1">Distance 1 (mi)</label>
+            <input id="d1" type="number" placeholder="Primary distance" />
+          </div>
+
+          <div class="field">
+            <label for="d2">Distance 2 (mi)</label>
+            <input id="d2" type="number" placeholder="Secondary/dev distance" />
+          </div>
+
+          <div class="field">
+            <label for="url">Listing URL</label>
+            <input
+              id="url"
+              type="url"
+              placeholder="https://property-website.com/listing"
+            />
+          </div>
+        </div>
+
+        <button id="addBtn" class="btn btn-primary" type="button">Add Apartment</button>
+        <p class="meta" style="margin-top: 8px;">
+          All fields except the listing URL are required. The URL, if provided, becomes a clickable
+          “View Listing” link on the browse page.
+        </p>
+      </section>
+
+      <!-- Delete apartment card -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Delete Apartment</h2>
+            <p class="card-subtitle">
+              Remove a row by its numeric ID, as shown on the Browse page.
+            </p>
+          </div>
+          <span class="pill">Dev only</span>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="delId">Apartment ID</label>
+            <input id="delId" type="number" placeholder="ID to delete" />
+          </div>
+        </div>
+
+        <button id="delBtn" class="btn btn-danger" type="button">Delete Apartment</button>
+        <p class="meta" style="margin-top: 8px;">
+          Changes are permanent. Consider exporting the data before doing bulk deletes.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

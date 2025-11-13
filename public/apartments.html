@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Browse Apartments</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-title">
+          Apartments E_M
+          <span class="badge">Listings</span>
+        </div>
+        <div class="brand-subtitle">
+          Filter by price, size, bedrooms, bathrooms, and distance from Castle Rock &amp; Broomfield.
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="index.html">Overview</a>
+        <a href="apartments.html" class="nav-primary">Browse</a>
+        <a href="admin.html">Developer Admin</a>
+      </nav>
+    </header>
+
+    <main class="app-main">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Search & Filter</h2>
+            <p class="card-subtitle">
+              Use the filters below to narrow down the apartment list.
+            </p>
+          </div>
+          <div class="pill">
+            Live dataset • 120+ rows
+          </div>
+        </div>
+
+        <form id="filters" onsubmit="return false;">
+          <div class="field-grid">
+            <div class="field">
+              <label for="f-name">Name</label>
+              <input id="f-name" placeholder="e.g. Talus, Union, Lodge" />
+            </div>
+
+            <div class="field">
+              <label for="f-price-min">Min Price</label>
+              <input id="f-price-min" type="number" placeholder="e.g. 1500" />
+            </div>
+
+            <div class="field">
+              <label for="f-price-max">Max Price</label>
+              <input id="f-price-max" type="number" placeholder="e.g. 2300" />
+            </div>
+
+            <div class="field">
+              <label for="f-sqft-min">Min Sq Ft</label>
+              <input id="f-sqft-min" type="number" placeholder="e.g. 600" />
+            </div>
+
+            <div class="field">
+              <label for="f-sqft-max">Max Sq Ft</label>
+              <input id="f-sqft-max" type="number" placeholder="e.g. 1100" />
+            </div>
+
+            <div class="field">
+              <label for="f-beds">Bedrooms</label>
+              <input id="f-beds" type="number" placeholder="Exact (e.g. 2)" />
+            </div>
+
+            <div class="field">
+              <label for="f-baths">Bathrooms</label>
+              <input id="f-baths" type="number" step="0.5" placeholder="Exact (e.g. 2)" />
+            </div>
+
+            <div class="field">
+              <label for="f-dist1-max">Max Distance from Castle Rock (mi)</label>
+              <input id="f-dist1-max" type="number" placeholder="Primary distance" />
+            </div>
+
+            <!-- Dev-only filter; JS will hide/show it -->
+            <div class="field" id="dist2-filter-field">
+              <label for="f-dist2-max">Max Distance from Broomfield (mi, dev)</label>
+              <input id="f-dist2-max" type="number" placeholder="Hidden dev metric" />
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 4px;">
+            <button id="apply" class="btn btn-primary" type="button">Apply Filters</button>
+            <button id="clear" class="btn btn-secondary" type="button">Clear</button>
+          </div>
+
+          <p class="meta" style="margin-top: 8px;">
+            Dev accounts can see and filter by <strong>distance from Broomfield</strong>. Regular users
+            only see and filter by <strong>distance from Castle Rock</strong>.
+          </p>
+        </form>
+
+        <div class="table-wrapper">
+          <table id="tbl">
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Sq Ft</th>
+                <th>Beds</th>
+                <th>Baths</th>
+                <th>Distance from Castle Rock</th>
+                <th id="th-d2" class="hidden">Distance from Broomfield</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- This is where your JS is loaded -->
+  <script src="js/apartments.js"></script>
+</body>
+</html>

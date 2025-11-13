@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: Tatertot2103
+      POSTGRES_PASSWORD: 2103
+      POSTGRES_DB: apartments_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+
+  web:
+    build: .
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_USER: Tatertot2103
+      DB_PASSWORD: 2103
+      DB_NAME: apartments_db
+      SESSION_SECRET: "dev_secret_change_me"
+    depends_on:
+      - db
+
+volumes:
+  db_data:

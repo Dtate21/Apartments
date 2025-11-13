@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Apartments E_M</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-title">
+          Apartments E_M
+          <span class="badge">CU Boulder</span>
+        </div>
+        <div class="brand-subtitle">
+          Filter, compare, and manage Front Range apartment data in one clean dashboard.
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="apartments.html" class="nav-primary">Browse Listings</a>
+        <a href="admin.html">Developer Admin</a>
+      </nav>
+    </header>
+
+    <main class="app-main">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Welcome</h2>
+            <p class="card-subtitle">
+              Use this tool to explore apartments by price, square footage, bedroom count, bathrom count, and distance.
+            </p>
+          </div>
+        </div>
+
+        <p class="meta" style="margin-bottom: 10px;">
+          • <strong>Browse Apartments</strong> lets you interactively filter the 120-row dataset.<br />
+        </p>
+
+        <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="location.href='apartments.html'">
+            Open Listings
+          </button>
+          <button class="btn btn-secondary" onclick="location.href='admin.html'">
+            Developer Console
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
