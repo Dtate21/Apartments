@@ -1,135 +1,137 @@
-require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const session = require('express-session');
-const bodyParser = require('body-parser');
-const path = require('path');
 const { Pool } = require('pg');
 
 const app = express();
-const port = 3000;
 
-// --- Database pool ---
+/* ------------------------------------------
+   DATABASE CONNECTION
+------------------------------------------- */
+
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
+  connectionString:
+    process.env.DATABASE_URL ||
+    'postgres://postgres:postgres@db:5432/apartments',
+
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
 });
 
-// --- Middleware ---
+/* ------------------------------------------
+   AUTO DB INIT (SCHEMA + SEED)
+------------------------------------------- */
+
+async function ensureDb() {
+  // load schema
+  const schema = fs.readFileSync(
+    path.join(__dirname, 'db', 'init', '01_schema.sql'),
+    'utf8'
+  );
+  await pool.query(schema);
+
+  // count rows
+  let count = 0;
+  try {
+    const result = await pool.query('SELECT COUNT(*) FROM apartments');
+    count = Number(result.rows[0].count);
+  } catch (err) {
+    console.log("Couldn't count rows, seeding anyway…");
+  }
+
+  // if empty → seed
+  if (count === 0) {
+    const seed = fs.readFileSync(
+      path.join(__dirname, 'db', 'init', '02_seed.sql'),
+      'utf8'
+    );
+    await pool.query(seed);
+    console.log('🌱 Seeded database!');
+  } else {
+    console.log(`DB already has ${count} apartments. Skipping seed.`);
+  }
+}
+
+/* ------------------------------------------
+   MIDDLEWARE
+------------------------------------------- */
+
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'dev_secret_change_me',
+    secret: process.env.SESSION_SECRET || 'dev-secret',
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
   })
 );
 
-// --- Helpers ---
-function requireDev(req, res, next) {
-  const user = req.session.user;
-  if (!user || !user.isDev) {
-    return res.status(403).json({ error: 'Developer access required' });
-  }
-  next();
-}
+/* ------------------------------------------
+   ROUTES
+------------------------------------------- */
 
-// --- Page routes ---
-app.get('/', (_req, res) => {
+// home page
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/apartments-page', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'apartments.html'));
-});
-
-app.get('/admin-page', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-// --- Auth routes ---
-app.get('/me', (req, res) => {
-  const user = req.session.user;
-  if (!user) {
-    return res.json({});
-  }
-  res.json({
-    username: user.username,
-    isDev: user.isDev,
-  });
-});
-
-app.post('/login', async (req, res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password) {
-    return res.status(400).json({ success: false, error: 'Missing credentials' });
-  }
-
-  try {
-    const result = await pool.query(
-      'SELECT id, username, password, is_dev FROM users WHERE username=$1',
-      [username]
-    );
-
-    if (result.rowCount === 0) {
-      return res.json({ success: false, error: 'Invalid username or password' });
-    }
-
-    const row = result.rows[0];
-
-    // Plaintext password for this simple project (DO NOT do this in real production)
-    if (row.password !== password) {
-      return res.json({ success: false, error: 'Invalid username or password' });
-    }
-
-    req.session.user = {
-      id: row.id,
-      username: row.username,
-      isDev: row.is_dev,
-    };
-
-    res.json({ success: true });
-  } catch (e) {
-    console.error('Login error:', e);
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-app.post('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.json({ success: true });
-  });
-});
-
-// --- Apartments API ---
-
-// Get list of apartments (for the browse page)
+// front-end fetcher → apartments.js fetches from here
 app.get('/apartments', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, price, square_footage, bedrooms, bathrooms, distance1, distance2, url FROM apartments ORDER BY price ASC'
+      'SELECT * FROM apartments ORDER BY id'
     );
-
-    const user = req.session.user;
-    const isDev = !!(user && user.isDev);
 
     res.json({
       rows: result.rows,
-      isDev,
+      isDev: !!req.session.isDev,
     });
-  } catch (e) {
-    console.error('DB select error:', e);
-    res.status(500).json({ error: 'DB select error' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load apartments' });
   }
 });
 
-// Add an apartment (dev-only)
-app.post('/apartments', requireDev, async (req, res) => {
+// login
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    const r = await pool.query(
+      'SELECT * FROM users WHERE username = $1 AND password = $2',
+      [username, password]
+    );
+
+    if (r.rowCount === 1) {
+      req.session.userId = r.rows[0].id;
+      req.session.isDev = r.rows[0].is_dev;
+      return res.redirect('/apartments.html');
+    }
+
+    res.status(401).send('Invalid username or password');
+  } catch (e) {
+    console.error(e);
+    res.status(500).send('Server error');
+  }
+});
+
+// logout
+app.post('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/');
+  });
+});
+
+/* ------------------------------------------
+   DEV ROUTES (admin)
+------------------------------------------- */
+
+// add apartment
+app.post('/admin/apartments', async (req, res) => {
+  if (!req.session.isDev) return res.status(403).send('Forbidden');
+
   const {
     name,
     price,
@@ -139,60 +141,60 @@ app.post('/apartments', requireDev, async (req, res) => {
     distance1,
     distance2,
     url,
-  } = req.body || {};
-
-  if (
-    !name ||
-    price == null ||
-    square_footage == null ||
-    bedrooms == null ||
-    bathrooms == null ||
-    distance1 == null ||
-    distance2 == null
-  ) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
+  } = req.body;
 
   try {
-    const result = await pool.query(
-      `
-      INSERT INTO apartments
-        (name, price, square_footage, bedrooms, bathrooms, distance1, distance2, url)
-      VALUES
-        ($1,   $2,    $3,             $4,       $5,        $6,        $7,        $8)
-      RETURNING id, name, price, square_footage, bedrooms, bathrooms, distance1, distance2, url
-      `,
+    await pool.query(
+      `INSERT INTO apartments
+       (name, price, square_footage, bedrooms, bathrooms, distance1, distance2, url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [
         name,
-        Number(price),
-        Number(square_footage),
-        Number(bedrooms),
-        Number(bathrooms),
-        Number(distance1),
-        Number(distance2),
+        price || null,
+        square_footage || 0,
+        bedrooms || 0,
+        bathrooms || 1,
+        distance1 || null,
+        distance2 || null,
         url || null,
       ]
     );
 
-    res.json({ success: true, apartment: result.rows[0] });
-  } catch (e) {
-    console.error('DB insert error:', e);
-    res.status(500).json({ error: 'DB insert error' });
+    res.redirect('/admin.html');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Failed to add apartment');
   }
 });
 
-// Delete an apartment (dev-only)
-app.delete('/apartments/:id', requireDev, async (req, res) => {
+// delete apartment
+app.post('/admin/apartments/delete', async (req, res) => {
+  if (!req.session.isDev) return res.status(403).send('Forbidden');
+
   try {
-    await pool.query('DELETE FROM apartments WHERE id=$1', [req.params.id]);
-    res.json({ success: true });
+    await pool.query('DELETE FROM apartments WHERE id = $1', [
+      req.body.id,
+    ]);
+    res.redirect('/admin.html');
   } catch (e) {
-    console.error('DB delete error:', e);
-    res.status(500).json({ error: 'DB delete error' });
+    console.error(e);
+    res.status(500).send('Failed to delete apartment');
   }
 });
 
-// --- Start server ---
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+/* ------------------------------------------
+   START SERVER AFTER DB INIT
+------------------------------------------- */
+
+const PORT = process.env.PORT || 3000;
+
+ensureDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ DB init failed:', err);
+    process.exit(1);
+  });
